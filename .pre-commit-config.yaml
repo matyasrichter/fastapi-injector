@@ -1,0 +1,36 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 'v4.0.1'
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: '21.10b0'
+    hooks:
+      - id: black
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.910'
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - fastapi
+          - injector
+  - repo: https://github.com/pycqa/flake8
+    rev: '4.0.1'
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - fastapi
+          - injector
+  - repo: https://github.com/PyCQA/isort
+    rev: '5.10.1'
+    hooks:
+      - id: isort
+  - repo: https://github.com/pycqa/pylint
+    rev: 'v2.12.1'
+    hooks:
+      - id: pylint
+        files: fastapi_injector
+        additional_dependencies:
+          - fastapi
+          - injector
