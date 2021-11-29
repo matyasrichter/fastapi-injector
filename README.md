@@ -5,6 +5,15 @@
 
 Integrates [injector](https://github.com/alecthomas/injector) with [FastAPI](https://github.com/tiangolo/fastapi).
 
+Github: https://github.com/matyasrichter/fastapi-injector
+PyPI: https://pypi.org/project/fastapi-injector/
+
+## Installation
+
+```shell
+pip install fastapi-injector
+```
+
 ## Usage
 
 When creating your FastAPI app, attach the injector to it:
