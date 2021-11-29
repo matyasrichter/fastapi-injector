@@ -41,4 +41,5 @@ def Injected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-name
 __all__ = [
     "attach_injector",
     "Injected",
+    "RouteInjectionError",
 ]

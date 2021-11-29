@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, FastAPI, Response, status
 from fastapi.testclient import TestClient
 from injector import Injector
 
-from fastapi_injector import Injected, attach_injector
+from fastapi_injector import Injected, RouteInjectionError, attach_injector
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,3 +46,15 @@ async def test_router_injection(app):
     r = client.get("/")
     assert r.status_code == status.HTTP_200_OK
     assert r.headers["X-Integer"] == str(BIND_INT_TO)
+
+
+async def test_not_attached():
+    app = FastAPI()
+
+    @app.get("/")
+    def get_root(integer: int = Injected(int)):
+        pass
+
+    client = TestClient(app)
+    with pytest.raises(RouteInjectionError):
+        client.get("/")
