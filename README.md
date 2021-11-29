@@ -40,6 +40,7 @@ A more complete example could look like this (your FastAPI code only depends on 
 its implementation only depends on a domain layer port etc.):
 
 ```python
+# ------------------------
 # interface.py
 import abc
 from abc import abstractmethod
@@ -51,6 +52,7 @@ class SomeInterface(abc.ABC):
         """Creates and saves an entity."""
 
 
+# ------------------------
 # service.py
 import abc
 from .interface import SomeInterface
@@ -70,7 +72,12 @@ class SomeService(SomeInterface):
         entity = Entity(attr1=1, attr2=2)
         await self.save_port.save_something(entity)
 
+
+# ------------------------
 # repository.py
+from .service import SomeSavePort
+
+
 class SomeRepository(SomeSavePort):
     async def save_something(self, something: Entity) -> None:
         # code that saves the entity to the DB
