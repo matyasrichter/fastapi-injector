@@ -4,3 +4,6 @@ venv
 .idea
 .vscode
 /.mypy_cache/
+build/
+dist/
+*.egg-info/
