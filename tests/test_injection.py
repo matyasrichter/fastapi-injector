@@ -3,7 +3,12 @@ from fastapi import APIRouter, Depends, FastAPI, Response, status
 from fastapi.testclient import TestClient
 from injector import Injector
 
-from fastapi_injector import Injected, RouteInjectionError, attach_injector
+from fastapi_injector import (
+    Injected,
+    InjectorNotAttached,
+    attach_injector,
+    get_injector_instance,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -56,5 +61,18 @@ async def test_not_attached():
         pass
 
     client = TestClient(app)
-    with pytest.raises(RouteInjectionError):
+    with pytest.raises(InjectorNotAttached):
         client.get("/")
+
+
+def test_get_injector_instance():
+    inj = Injector()
+    app = FastAPI()
+    attach_injector(app, inj)
+    assert get_injector_instance(app) is inj
+
+
+def test_get_injector_instance_not_attached():
+    app = FastAPI()
+    with pytest.raises(InjectorNotAttached):
+        get_injector_instance(app)

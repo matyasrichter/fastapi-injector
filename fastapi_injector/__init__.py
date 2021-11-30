@@ -9,16 +9,28 @@ from fastapi import Depends, FastAPI, Request
 from injector import Injector
 
 
+class InjectorNotAttached(ValueError):
+    """Raised when Injected is used without an injector instance attached to the app."""
+
+
 def attach_injector(app: FastAPI, injector: Injector) -> None:
     """Call this function on app startup to attach an injector to the app."""
     app.state.injector = injector
 
 
-class RouteInjectionError(ValueError):
-    """Raised when Injected is used without an injector instance attached to the app."""
+def get_injector_instance(app: FastAPI) -> Injector:
+    """
+    Returns the injector instance attached to the app.
+    """
+    try:
+        return app.state.injector
+    except AttributeError as exc:
+        raise InjectorNotAttached(
+            "No injector instance has been attached to the app."
+        ) from exc
 
 
-BoundInterface = TypeVar("BoundInterface")
+BoundInterface = TypeVar("BoundInterface", bound=type)
 
 
 def Injected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-name
@@ -29,10 +41,10 @@ def Injected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-name
 
     def inject_into_route(request: Request) -> BoundInterface:
         try:
-            return request.app.state.injector.get(interface)
+            return get_injector_instance(request.app).get(interface)
         except AttributeError as exc:
-            raise RouteInjectionError(
-                "An injector instance has not been attached to the app."
+            raise InjectorNotAttached(
+                "No injector instance has been attached to the app."
             ) from exc
 
     return Depends(inject_into_route)
@@ -41,5 +53,5 @@ def Injected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-name
 __all__ = [
     "attach_injector",
     "Injected",
-    "RouteInjectionError",
+    "InjectorNotAttached",
 ]
