@@ -40,12 +40,7 @@ def Injected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-name
     """
 
     def inject_into_route(request: Request) -> BoundInterface:
-        try:
-            return get_injector_instance(request.app).get(interface)
-        except AttributeError as exc:
-            raise InjectorNotAttached(
-                "No injector instance has been attached to the app."
-            ) from exc
+        return get_injector_instance(request.app).get(interface)
 
     return Depends(inject_into_route)
 
