@@ -92,5 +92,51 @@ from .service import SomeSavePort
 
 class SomeRepository(SomeSavePort):
     async def save_something(self, something: Entity) -> None:
-        # code that saves the entity to the DB
+# code that saves the entity to the DB
+```
+
+## Testing with fastapi-injector
+
+To use your app in tests with overridden dependencies, modify the injector before each test:
+
+```python
+# ------------------------
+# app entrypoint
+import pytest
+from injector import Injector
+
+app = create_app(inj)
+
+if __name__ == "__main__":
+    uvicorn.run("app", ...)
+
+
+# ------------------------
+# composition root
+def create_injector() -> Injector:
+    inj = Injector()
+    # note that this still gets executed,
+    # so if you need to get rid of a DB connection, for example,
+    # you would need to use a callable provider.
+    inj.binder.bind(int, 1)
+    return inj
+
+
+# ------------------------
+# tests
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from path.to.app.factory import create_app
+
+
+@pytest.fixture
+def app() -> FastAPI:
+    inj = Injector()
+    inj.binder.bind(int, 2)
+    return create_app(inj)
+
+
+def some_test(app: FastAPI):
+    # use test client with the new app
+    client = TestClient(app)
 ```
