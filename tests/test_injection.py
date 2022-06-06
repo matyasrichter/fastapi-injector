@@ -10,8 +10,6 @@ from fastapi_injector import (
     get_injector_instance,
 )
 
-pytestmark = pytest.mark.asyncio
-
 BIND_INT_TO: int = 1
 
 
@@ -24,6 +22,7 @@ def app() -> FastAPI:
     return app
 
 
+@pytest.mark.asyncio
 async def test_route_injection(app):
     @app.get("/")
     def get_root(integer: int = Injected(int)):
@@ -35,6 +34,7 @@ async def test_route_injection(app):
     assert response.json() == BIND_INT_TO
 
 
+@pytest.mark.asyncio
 async def test_router_injection(app):
     async def attach_to_response(response: Response, integer: int = Injected(int)):
         response.headers["X-Integer"] = str(integer)
@@ -53,6 +53,7 @@ async def test_router_injection(app):
     assert r.headers["X-Integer"] == str(BIND_INT_TO)
 
 
+@pytest.mark.asyncio
 async def test_not_attached():
     app = FastAPI()
 
