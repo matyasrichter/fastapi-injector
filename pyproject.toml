@@ -4,11 +4,12 @@ version = "0.2.0"
 description = "python-injector integration for FastAPI"
 authors = ["Matyas Richter <matyas@mrichter.cz>"]
 license = "BSD"
-homepage = "https://github.com/matyasrichter/fastapi-injector"
+repository = "https://github.com/matyasrichter/fastapi-injector"
 packages = [
     {include = "fastapi_injector"},
 ]
 include = ["fastapi_injector/py.typed"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.7 <4.0"
