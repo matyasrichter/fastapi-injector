@@ -4,7 +4,7 @@ jobs:
   lint_test:
     strategy:
       matrix:
-        python-version: [ '3.6', '3.7', '3.8', '3.9', '3.10' ]
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -14,7 +14,7 @@ jobs:
       - name: Lint with pre-commit
         uses: pre-commit/action@v2.0.3
       - name: Install requirements
-        run: pip install -r requirements.txt -r requirements-dev.txt
+        run: pip install poetry && poetry install
       - name: Test
         run: python -m pytest --cov fastapi_injector --cov-report xml
       - name: Collect test coverage
