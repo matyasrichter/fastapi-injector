@@ -8,6 +8,7 @@ homepage = "https://github.com/matyasrichter/fastapi-injector"
 packages = [
     {include = "fastapi_injector"},
 ]
+include = ["fastapi_injector/py.typed"]
 
 [tool.poetry.dependencies]
 python = ">=3.7<=4.0"
