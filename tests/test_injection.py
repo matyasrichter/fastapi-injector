@@ -1,6 +1,6 @@
+import httpx
 import pytest
 from fastapi import APIRouter, Depends, FastAPI, Response, status
-from fastapi.testclient import TestClient
 from injector import Injector
 
 from fastapi_injector import (
@@ -28,8 +28,8 @@ async def test_route_injection(app):
     def get_root(integer: int = Injected(int)):
         return integer
 
-    client = TestClient(app)
-    response = client.get("/")
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == BIND_INT_TO
 
@@ -47,8 +47,8 @@ async def test_router_injection(app):
 
     app.include_router(router)
 
-    client = TestClient(app)
-    r = client.get("/")
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        r = await client.get("/")
     assert r.status_code == status.HTTP_200_OK
     assert r.headers["X-Integer"] == str(BIND_INT_TO)
 
@@ -61,9 +61,9 @@ async def test_not_attached():
     def get_root(integer: int = Injected(int)):
         pass
 
-    client = TestClient(app)
-    with pytest.raises(InjectorNotAttached):
-        client.get("/")
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        with pytest.raises(InjectorNotAttached):
+            await client.get("/")
 
 
 def test_get_injector_instance():

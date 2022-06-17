@@ -95,6 +95,47 @@ class SomeRepository(SomeSavePort):
 # code that saves the entity to the DB
 ```
 
+## Request scope
+A common requirement is to have a dependency resolved to the same instance multiple times in the same request,
+but to create new instances for other requests. An example usecase for this behaviour 
+is managing per-request DB connections.
+
+This library provides a `RequestScope` that fulfills this requirement.
+Under the hood, it uses [Context Variables](https://docs.python.org/3/library/contextvars.html)
+introduced in Python 3.7, generates a UUID4 for each request, and caches dependencies in a dictionary
+with this uuid as the key.
+
+```python
+from injector import Injector
+from fastapi import FastAPI
+from fastapi_injector import InjectorMiddleware, request_scope, attach_injector
+
+from foo.bar import Interface, Implementation
+
+inj = Injector()
+# Use request_scope when binding the dependency
+inj.binder.bind(Interface, to=Implementation, scope=request_scope)
+
+app = FastAPI()
+# Add the injector middleware to the app instance
+app.add_middleware(InjectorMiddleware, injector=inj)
+attach_injector(app, inj)
+```
+
+Your dependencies will then be cached within a request's resolution tree.
+Caching works both for top-level and nested dependencies
+(e.g. when you inject a DB connection to multiple repository classes).
+
+```python
+@app.get("/")
+def get_root(
+    foo: Interface = Injected(Interface),
+    bar: Interface = Injected(Interface),
+):
+    # the following assert will pass because both are the same instance.
+    assert foo is bar
+```
+
 ## Testing with fastapi-injector
 
 To use your app in tests with overridden dependencies, modify the injector before each test:
