@@ -5,6 +5,7 @@ from injector import Injector
 
 from fastapi_injector import (
     Injected,
+    SyncInjected,
     InjectorNotAttached,
     attach_injector,
     get_injector_instance,
@@ -37,6 +38,25 @@ async def test_route_injection(app):
 @pytest.mark.asyncio
 async def test_router_injection(app):
     async def attach_to_response(response: Response, integer: int = Injected(int)):
+        response.headers["X-Integer"] = str(integer)
+
+    router = APIRouter(dependencies=[Depends(attach_to_response)])
+
+    @router.get("/")
+    def get_root():
+        pass
+
+    app.include_router(router)
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        r = await client.get("/")
+    assert r.status_code == status.HTTP_200_OK
+    assert r.headers["X-Integer"] == str(BIND_INT_TO)
+
+
+@pytest.mark.asyncio
+async def test_router_injection_sync(app):
+    def attach_to_response(response: Response, integer: int = SyncInjected(int)):
         response.headers["X-Integer"] = str(integer)
 
     router = APIRouter(dependencies=[Depends(attach_to_response)])
