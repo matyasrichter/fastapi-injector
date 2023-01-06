@@ -1,11 +1,15 @@
+import asyncio
+import threading
+
 import httpx
 import pytest
 from fastapi import APIRouter, Depends, FastAPI, Response, status
-from injector import Injector
+from injector import Injector, Module, provider
 
 from fastapi_injector import (
     Injected,
     InjectorNotAttached,
+    SyncInjected,
     attach_injector,
     get_injector_instance,
 )
@@ -13,9 +17,19 @@ from fastapi_injector import (
 BIND_INT_TO: int = 1
 
 
+class MyModule(Module):
+    @provider
+    def is_main_thread(self) -> bool:
+        return threading.current_thread() is threading.main_thread()
+
+    @provider
+    def event_loop(self) -> asyncio.AbstractEventLoop:
+        return asyncio.get_event_loop()
+
+
 @pytest.fixture
 def app() -> FastAPI:
-    inj = Injector()
+    inj = Injector(MyModule())
     inj.binder.bind(int, to=BIND_INT_TO)
     app = FastAPI()
     attach_injector(app, inj)
@@ -51,6 +65,64 @@ async def test_router_injection(app):
         r = await client.get("/")
     assert r.status_code == status.HTTP_200_OK
     assert r.headers["X-Integer"] == str(BIND_INT_TO)
+
+
+@pytest.mark.asyncio
+async def test_router_injection_sync(app):
+    async def attach_to_response(
+        response: Response, is_main_thread: bool = SyncInjected(bool)
+    ):
+        response.headers["X-Main"] = str(is_main_thread)
+
+    router = APIRouter(dependencies=[Depends(attach_to_response)])
+
+    @router.get("/")
+    def get_root():
+        pass
+
+    app.include_router(router)
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        r = await client.get("/")
+    assert r.headers["X-Main"] == "False"
+
+
+@pytest.mark.asyncio
+async def test_router_injection_async(app):
+    async def attach_to_response(
+        response: Response,
+        is_main_thread: bool = Injected(bool),
+    ):
+        response.headers["X-Main"] = str(is_main_thread)
+
+    router = APIRouter(dependencies=[Depends(attach_to_response)])
+
+    @router.get("/")
+    def get_root():
+        pass
+
+    app.include_router(router)
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        r = await client.get("/")
+    assert r.headers["X-Main"] == "True"
+
+
+@pytest.mark.asyncio
+async def test_router_injection_can_access_event_loop(app):
+    router = APIRouter()
+
+    @router.get("/")
+    def get_root(
+        event_loop: asyncio.AbstractEventLoop = Injected(asyncio.AbstractEventLoop),
+    ):
+        pass
+
+    app.include_router(router)
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        # will raise an exception when run synchronously
+        await client.get("/")
 
 
 @pytest.mark.asyncio
