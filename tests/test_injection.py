@@ -1,16 +1,15 @@
 import asyncio
-import httpx
-import pytest
 import threading
 
-
+import httpx
+import pytest
 from fastapi import APIRouter, Depends, FastAPI, Response, status
-from injector import provider, Injector, Module
+from injector import Injector, Module, provider
 
 from fastapi_injector import (
     Injected,
-    SyncInjected,
     InjectorNotAttached,
+    SyncInjected,
     attach_injector,
     get_injector_instance,
 )
