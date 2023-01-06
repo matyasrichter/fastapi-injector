@@ -136,6 +136,9 @@ def get_root(
     assert foo is bar
 ```
 
+### SyncInjected
+The dependency constructed by `Injected` is asynchronous. This causes it to run on the main thread. Should your usecase require a synchronous dependency, there's also an alternative - `SyncInjected`. Synchronous dependencies created by `SyncInjected` will be run on a separate thread from the threadpool. See the [FastAPI docs on this behaviour](https://fastapi.tiangolo.com/async/#dependencies).
+
 ## Testing with fastapi-injector
 
 To use your app in tests with overridden dependencies, modify the injector before each test:
