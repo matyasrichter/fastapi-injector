@@ -181,3 +181,9 @@ def some_test(app: FastAPI):
     # use test client with the new app
     client = TestClient(app)
 ```
+
+## Contributing
+All contributions are welcome. Please raise an issue and/or open a pull request if you'd like to help to make `fastapi-injector` better.
+- Use [poetry](https://python-poetry.org/docs/) to install dependencies
+- Use [pre-commit](https://pre-commit.com/) to run linters and formatters before committing and pushing
+- Write tests for your code
