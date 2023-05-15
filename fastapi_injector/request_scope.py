@@ -1,8 +1,17 @@
 import uuid
+from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, Type
 
-from injector import Injector, InstanceProvider, Provider, Scope, ScopeDecorator, T
+from injector import (
+    Inject,
+    Injector,
+    InstanceProvider,
+    Provider,
+    Scope,
+    ScopeDecorator,
+    T,
+)
 from starlette.types import Receive, Send
 
 from fastapi_injector.exceptions import RequestScopeError
@@ -66,6 +75,27 @@ class RequestScope(Scope):
 request_scope = ScopeDecorator(RequestScope)
 
 
+class RequestScopeFactory:
+    """
+    Allows to create request scopes.
+    """
+
+    def __init__(self, request_scope_instance: Inject[RequestScope]) -> None:
+        self.request_scope_instance = request_scope_instance
+
+    @contextmanager
+    def create_scope(self):
+        """Creates a new request scope within dependencies are cached."""
+        rid = uuid.uuid4()
+        rid_ctx = _request_id_ctx.set(rid)
+        self.request_scope_instance.add_key(rid)
+        try:
+            yield
+        finally:
+            self.request_scope_instance.clear_key(rid)
+            _request_id_ctx.reset(rid_ctx)
+
+
 class InjectorMiddleware:
     """
     Middleware that enables request-scoped injection through ContextVar-based cache.
@@ -73,18 +103,12 @@ class InjectorMiddleware:
 
     def __init__(self, app, injector: Injector) -> None:
         self.app = app
-        self.request_scope_instance = injector.get(RequestScope)
+        self.request_scope_factory = injector.get(RequestScopeFactory)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """
         Add an identifier to the request
         that can be used retrieve scoped dependencies.
         """
-        rid = uuid.uuid4()
-        rid_ctx = _request_id_ctx.set(rid)
-        self.request_scope_instance.add_key(rid)
-        try:
+        with self.request_scope_factory.create_scope():
             await self.app(scope, receive, send)
-        finally:
-            self.request_scope_instance.clear_key(rid)
-            _request_id_ctx.reset(rid_ctx)
