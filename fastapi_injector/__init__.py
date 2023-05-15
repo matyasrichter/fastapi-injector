@@ -9,6 +9,7 @@ from fastapi_injector.injected import Injected, SyncInjected
 from fastapi_injector.request_scope import (
     InjectorMiddleware,
     RequestScope,
+    RequestScopeFactory,
     request_scope,
 )
 
@@ -20,5 +21,6 @@ __all__ = [
     "InjectorNotAttached",
     "request_scope",
     "RequestScope",
+    "RequestScopeFactory",
     "InjectorMiddleware",
 ]

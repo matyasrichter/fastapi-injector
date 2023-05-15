@@ -14,6 +14,7 @@ from fastapi_injector import (
     Injected,
     InjectorMiddleware,
     RequestScope,
+    RequestScopeFactory,
     attach_injector,
     request_scope,
 )
@@ -209,3 +210,25 @@ async def test_request_scope_cache_cleared(app_inj):
         await client.get("/")
 
     assert len(scope_instance.cache) == 0
+
+
+async def test_caches_instances_with_scope_factory():
+    class DummyInterface:
+        pass
+
+    class DummyImpl:
+        pass
+
+    inj = Injector()
+    inj.binder.bind(DummyInterface, to=DummyImpl, scope=request_scope)
+
+    factory = inj.get(RequestScopeFactory)
+
+    with factory.create_scope():
+        dummy1 = inj.get(DummyInterface)
+        dummy2 = inj.get(DummyInterface)
+        assert dummy1 is dummy2
+
+    with factory.create_scope():
+        dummy3 = inj.get(DummyInterface)
+        assert dummy1 is not dummy3
