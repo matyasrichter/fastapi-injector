@@ -136,6 +136,19 @@ def get_root(
     assert foo is bar
 ```
 
+Outside of FastAPI routes, you can use `RequestScopeFactory.create_scope`, which returns a context manager that substitutes `InjectorMiddleware`.
+This is useful in celery tasks, cron jobs, CLI commands and other parts of your application outside of the request-response cycle.
+
+```python
+class MessageHandler:
+    def __init__(self, request_scope_factory: Inject[RequestScopeFactory]) -> None:
+        self.request_scope_factory = request_scope_factory
+
+    async def handle(self, message: Any) -> None:
+        with self.request_scope_factory.create_scope():
+            # process message
+```
+
 ### SyncInjected
 The dependency constructed by `Injected` is asynchronous. This causes it to run on the main thread. Should your usecase require a synchronous dependency, there's also an alternative - `SyncInjected`. Synchronous dependencies created by `SyncInjected` will be run on a separate thread from the threadpool. See the [FastAPI docs on this behaviour](https://fastapi.tiangolo.com/async/#dependencies).
 
