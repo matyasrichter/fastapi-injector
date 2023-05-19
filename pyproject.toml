@@ -10,6 +10,13 @@ packages = [
 ]
 include = ["fastapi_injector/py.typed"]
 readme = "README.md"
+classifiers = [
+    "Topic :: Software Development :: Libraries",
+    "Framework :: FastAPI",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Typing :: Typed",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8 <3.12"
