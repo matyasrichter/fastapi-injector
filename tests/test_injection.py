@@ -4,6 +4,8 @@ import threading
 import httpx
 import pytest
 from fastapi import APIRouter, Depends, FastAPI, Response, status
+from fastapi.testclient import TestClient
+from fastapi.websockets import WebSocket
 from injector import Injector, Module, provider
 
 from fastapi_injector import (
@@ -46,6 +48,18 @@ async def test_route_injection(app):
         response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == BIND_INT_TO
+
+
+def test_route_injection_websocket(app):
+    @app.websocket("/")
+    async def ws(websocket: WebSocket, integer: int = Injected(int)):
+        await websocket.accept()
+        await websocket.send_json(integer)
+        await websocket.close()
+
+    client = TestClient(app)
+    with client.websocket_connect("/") as websocket:
+        assert websocket.receive_json() == BIND_INT_TO
 
 
 @pytest.mark.asyncio
