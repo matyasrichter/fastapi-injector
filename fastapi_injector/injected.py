@@ -1,6 +1,7 @@
 from typing import Any, TypeVar
 
-from fastapi import Depends, Request
+from fastapi import Depends
+from starlette.requests import HTTPConnection
 
 from fastapi_injector.attach import get_injector_instance
 
@@ -13,8 +14,8 @@ def Injected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-name
     allowing you to use it in the route.
     """
 
-    async def inject_into_route(request: Request) -> BoundInterface:
-        return get_injector_instance(request.app).get(interface)
+    async def inject_into_route(conn: HTTPConnection) -> BoundInterface:
+        return get_injector_instance(conn.app).get(interface)
 
     return Depends(inject_into_route)
 
@@ -26,7 +27,7 @@ def SyncInjected(interface: BoundInterface) -> Any:  # pylint: disable=invalid-n
     with synchronous interfaces.
     """
 
-    def inject_into_route(request: Request) -> BoundInterface:
-        return get_injector_instance(request.app).get(interface)
+    def inject_into_route(conn: HTTPConnection) -> BoundInterface:
+        return get_injector_instance(conn.app).get(interface)
 
     return Depends(inject_into_route)
