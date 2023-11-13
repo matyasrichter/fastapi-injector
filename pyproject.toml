@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8 <3.12"
+python = ">=3.8 <3.13"
 fastapi = ">=0.70.0"
 injector = ">=0.19.0"
 
