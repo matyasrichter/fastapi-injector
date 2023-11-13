@@ -152,6 +152,39 @@ class MessageHandler:
 ### SyncInjected
 The dependency constructed by `Injected` is asynchronous. This causes it to run on the main thread. Should your usecase require a synchronous dependency, there's also an alternative - `SyncInjected`. Synchronous dependencies created by `SyncInjected` will be run on a separate thread from the threadpool. See the [FastAPI docs on this behaviour](https://fastapi.tiangolo.com/async/#dependencies).
 
+### Dependency cleanup
+In some cases a request-scoped dependency may represent a resource that you wish to clean up in a deterministic manner at the end of the request scope. This might be because the resource is leased from a finite pool of such resources (e.g. a DB connection), and failure to release the resource in a timely manner could cause resource exhaustion. Typically, these resources will implement the [ContextManager protocol](https://docs.python.org/3/library/stdtypes.html#context-manager-types) so that they can be used with Python's `with` statement (or the async equivalent, `contextlib.AbstractAsyncContextManager`, which is used with the `async with` statement).
+
+This library provides an option to perform cleanup on any dependency that implements one of the `ContextManager` protocols (either sync or async). To enable cleanup, set `enable_cleanup=True` when you attach the injector, as in the following example:
+
+```python
+from injector import Injector
+from fastapi import FastAPI
+from fastapi_injector import InjectorMiddleware, request_scope, attach_injector
+from typing import TextIO
+
+class ResourceFile:
+    def __init__(self) -> None:
+        self.file = None
+
+    def __enter__(self) -> TextIO:
+        self.file = open('resource.txt', 'r')
+        return file
+
+    def __exit__(self, *_args) -> None:
+        self.file.close()
+
+inj = Injector()
+inj.binder.bind(ResourceFile, scope=request_scope)
+
+app = FastAPI()
+app.add_middleware(InjectorMiddleware, injector=inj)
+# Note the use of enable_cleanup
+attach_injector(app, inj, enable_cleanup=True)
+```
+
+By adding `enable_cleanup=True` when attaching the injector, the library ensures that the `ResourceFile.__exit__()` function is called at the end of the request, meaning that the file resource is released.
+
 ## Testing with fastapi-injector
 
 To use your app in tests with overridden dependencies, modify the injector before each test:

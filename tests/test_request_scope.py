@@ -2,12 +2,12 @@ import abc
 import asyncio
 import time
 import uuid
-from typing import Tuple
+from typing import Self, Tuple
 
 import httpx
 import pytest
 from fastapi import FastAPI
-from injector import Injector, inject
+from injector import Injector, InstanceProvider, inject, singleton
 from starlette import status
 
 from fastapi_injector import (
@@ -15,6 +15,7 @@ from fastapi_injector import (
     InjectorMiddleware,
     RequestScope,
     RequestScopeFactory,
+    RequestScopeOptions,
     attach_injector,
     request_scope,
 )
@@ -224,11 +225,103 @@ async def test_caches_instances_with_scope_factory():
 
     factory = inj.get(RequestScopeFactory)
 
-    with factory.create_scope():
+    async with factory.create_scope():
         dummy1 = inj.get(DummyInterface)
         dummy2 = inj.get(DummyInterface)
         assert dummy1 is dummy2
 
-    with factory.create_scope():
+    async with factory.create_scope():
         dummy3 = inj.get(DummyInterface)
         assert dummy1 is not dummy3
+
+
+class DummyContextManager:
+    UNENTERED = object()
+    ENTERED = object()
+    EXITED = object()
+
+    def __init__(self) -> None:
+        self.state = self.UNENTERED
+
+    def __enter__(self) -> Self:
+        self.state = self.ENTERED
+        return self
+
+    def __exit__(self, *_args) -> None:
+        self.state = self.EXITED
+
+
+class DummyAsyncContextManager:
+    UNENTERED = object()
+    ENTERED = object()
+    EXITED = object()
+
+    def __init__(self) -> None:
+        self.state = self.UNENTERED
+
+    async def __aenter__(self) -> Self:
+        self.state = self.ENTERED
+        return self
+
+    async def __aexit__(self, *_args) -> None:
+        self.state = self.EXITED
+
+
+async def test_context_manager_instances_are_cleaned_up_when_enabled():
+    inj = Injector()
+    inj.binder.bind(DummyContextManager, to=DummyContextManager, scope=request_scope)
+    options = RequestScopeOptions(enable_cleanup=True)
+    inj.binder.bind(RequestScopeOptions, InstanceProvider(options), scope=singleton)
+
+    factory = inj.get(RequestScopeFactory)
+
+    async with factory.create_scope():
+        dummy = inj.get(DummyContextManager)
+        assert dummy.state is DummyContextManager.ENTERED
+
+    assert dummy.state is DummyContextManager.EXITED
+
+
+async def test_context_manager_instances_are_not_cleaned_up_when_not_enabled():
+    inj = Injector()
+    inj.binder.bind(DummyContextManager, to=DummyContextManager, scope=request_scope)
+
+    factory = inj.get(RequestScopeFactory)
+
+    async with factory.create_scope():
+        dummy = inj.get(DummyContextManager)
+        assert dummy.state is DummyContextManager.UNENTERED
+
+    assert dummy.state is DummyContextManager.UNENTERED
+
+
+async def test_async_context_manager_instances_are_cleaned_up_when_enabled():
+    inj = Injector()
+    inj.binder.bind(
+        DummyAsyncContextManager, to=DummyAsyncContextManager, scope=request_scope
+    )
+    options = RequestScopeOptions(enable_cleanup=True)
+    inj.binder.bind(RequestScopeOptions, InstanceProvider(options), scope=singleton)
+
+    factory = inj.get(RequestScopeFactory)
+
+    async with factory.create_scope():
+        dummy = inj.get(DummyAsyncContextManager)
+        assert dummy.state is DummyAsyncContextManager.ENTERED
+
+    assert dummy.state is DummyAsyncContextManager.EXITED
+
+
+async def test_async_context_manager_instances_are_not_cleaned_up_when_not_enabled():
+    inj = Injector()
+    inj.binder.bind(
+        DummyAsyncContextManager, to=DummyAsyncContextManager, scope=request_scope
+    )
+
+    factory = inj.get(RequestScopeFactory)
+
+    async with factory.create_scope():
+        dummy = inj.get(DummyAsyncContextManager)
+        assert dummy.state is DummyAsyncContextManager.UNENTERED
+
+    assert dummy.state is DummyAsyncContextManager.UNENTERED
