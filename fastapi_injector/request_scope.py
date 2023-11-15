@@ -72,7 +72,9 @@ class RequestScope(Scope):
         self.cache = {}
         self._loop = asyncio.new_event_loop()
         self._thr = threading.Thread(
-            target=self._loop.run_forever, name="Async Runner", daemon=True
+            target=self._loop.run_forever,
+            name="fastapi-injector-enter-context",
+            daemon=True,
         )
 
     def get(self, key: Type[T], provider: Provider[T]) -> Provider[T]:
