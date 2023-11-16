@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI
 from injector import Injector, InstanceProvider, singleton
 
@@ -5,19 +7,14 @@ from fastapi_injector.exceptions import InjectorNotAttached
 from fastapi_injector.request_scope import RequestScopeOptions
 
 
-def attach_injector(app: FastAPI, injector: Injector, **kwargs) -> None:
+def attach_injector(
+    app: FastAPI, injector: Injector, options: Optional[RequestScopeOptions] = None
+) -> None:
     """
     Call this function on app startup to attach an injector to the app.
-
-    Supported kwargs:
-        * enable_cleanup
-
-            If True, dependencies that were created from the request scope will be
-            cleaned up when the scope is exited. Only dependencies that implement one
-            of the context manager protocols will be considered for cleanup.
     """
     app.state.injector = injector
-    options = RequestScopeOptions(**kwargs)
+    options = options or RequestScopeOptions(enable_cleanup=False)
     injector.binder.bind(
         RequestScopeOptions, InstanceProvider(options), scope=singleton
     )

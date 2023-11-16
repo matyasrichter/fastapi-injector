@@ -8,6 +8,7 @@ from contextlib import (
     asynccontextmanager,
 )
 from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
 from injector import (
@@ -26,19 +27,18 @@ from fastapi_injector.exceptions import RequestScopeError
 _request_id_ctx: ContextVar[uuid.UUID] = ContextVar("request_id")
 
 
+@dataclass
 class RequestScopeOptions:
     """
     Defines the behavioural options for a request scope.
-
-    Available options are:
-      * enable_cleanup
-            If True, dependencies that were created from the request scope will be
-            cleaned up when the scope is exited. Only dependencies that implement one
-            of the context manager protocols will be considered for cleanup.
     """
 
-    def __init__(self, **kwargs) -> None:
-        self.enable_cleanup = kwargs.get("enable_cleanup", False)
+    enable_cleanup: bool = False
+    """
+    If True, dependencies that were created from the request scope will be cleaned up
+    when the scope is exited. Only dependencies that implement one of the context
+    manager protocols will be considered for cleanup.
+    """
 
 
 class RequestScope(Scope):
