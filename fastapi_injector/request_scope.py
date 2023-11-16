@@ -8,7 +8,7 @@ from contextlib import (
     asynccontextmanager,
 )
 from contextvars import ContextVar
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from injector import (
     Inject,
@@ -85,7 +85,7 @@ class RequestScope(Scope):
                 "Request ID missing in cache. "
                 "Make sure InjectorMiddleware has been added to the FastAPI instance."
             ) from exc
-        stack: AsyncExitStack | None = None
+        stack: Optional[AsyncExitStack] = None
         if self.options.enable_cleanup:
             if AsyncExitStack in self.cache[request_id]:
                 stack = self.cache[request_id][AsyncExitStack]
