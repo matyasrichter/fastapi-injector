@@ -179,11 +179,11 @@ inj.binder.bind(ResourceFile, scope=request_scope)
 
 app = FastAPI()
 app.add_middleware(InjectorMiddleware, injector=inj)
-# Note the use of enable_cleanup
-attach_injector(app, inj, enable_cleanup=True)
+options = RequestScopeOptions(enable_cleanup=True)
+attach_injector(app, inj, options)
 ```
 
-By adding `enable_cleanup=True` when attaching the injector, the library ensures that the `ResourceFile.__exit__()` function is called at the end of the request, meaning that the file resource is released.
+By setting `enable_cleanup=True` in the `RequestScopeOptions`, the library ensures that the `ResourceFile.__exit__()` function is called at the end of the request, meaning that the file resource is released.
 
 ## Testing with fastapi-injector
 
