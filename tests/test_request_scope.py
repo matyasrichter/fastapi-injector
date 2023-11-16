@@ -2,7 +2,7 @@ import abc
 import asyncio
 import time
 import uuid
-from typing import Self, Tuple
+from typing import Tuple
 
 import httpx
 import pytest
@@ -93,7 +93,7 @@ async def test_caches_instance_nested(app_inj):
 
 
 @pytest.mark.asyncio
-async def test_doesnt_cache_across_requests(app_inj):
+async def test_doesnt_cache_across_requests(app_inj) -> None:
     class DummyInterface:
         id: uuid.UUID
 
@@ -121,7 +121,7 @@ async def test_doesnt_cache_across_requests(app_inj):
 
 
 @pytest.mark.asyncio
-async def test_doesnt_cache_across_concurrent_requests(app_inj):
+async def test_doesnt_cache_across_concurrent_requests(app_inj) -> None:
     class DummyInterface:
         id: uuid.UUID
 
@@ -243,7 +243,7 @@ class DummyContextManager:
     def __init__(self) -> None:
         self.state = self.UNENTERED
 
-    def __enter__(self) -> Self:
+    def __enter__(self):
         self.state = self.ENTERED
         return self
 
@@ -259,7 +259,7 @@ class DummyAsyncContextManager:
     def __init__(self) -> None:
         self.state = self.UNENTERED
 
-    async def __aenter__(self) -> Self:
+    async def __aenter__(self):
         self.state = self.ENTERED
         return self
 
