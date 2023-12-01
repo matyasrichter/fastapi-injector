@@ -16,11 +16,11 @@ from injector import (
     Injector,
     InstanceProvider,
     Provider,
-    Scope,
     ScopeDecorator,
     T,
 )
-from starlette.types import Receive, Send
+from injector import Scope as InjectorScope
+from starlette.types import Receive, Scope, Send
 
 from fastapi_injector.exceptions import RequestScopeError
 
@@ -41,7 +41,7 @@ class RequestScopeOptions:
     """
 
 
-class RequestScope(Scope):
+class RequestScope(InjectorScope):
     """
     Caches dependencies within a single request.
     Needs the InjectorMiddleware to be installed to the FastAPI app.
