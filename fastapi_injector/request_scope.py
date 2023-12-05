@@ -11,15 +11,9 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
-from injector import (
-    Inject,
-    Injector,
-    InstanceProvider,
-    Provider,
-    ScopeDecorator,
-    T,
-)
+from injector import Inject, Injector, InstanceProvider, Provider
 from injector import Scope as InjectorScope
+from injector import ScopeDecorator, T
 from starlette.types import Receive, Scope, Send
 
 from fastapi_injector.exceptions import RequestScopeError
