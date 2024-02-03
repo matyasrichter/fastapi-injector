@@ -235,6 +235,31 @@ async def test_caches_instances_with_scope_factory():
         assert dummy1 is not dummy3
 
 
+async def test_works_without_auto_bind():
+    class DummyInterface:
+        pass
+
+    class DummyImpl:
+        pass
+
+    inj = Injector(auto_bind=False)
+    app = FastAPI()
+    app.add_middleware(InjectorMiddleware, injector=inj)
+    attach_injector(app, inj)
+    inj.binder.bind(DummyInterface, to=DummyImpl, scope=request_scope)
+
+    @app.get("/")
+    def get_root(
+        dummy: DummyInterface = Injected(DummyInterface),
+        dummy2: DummyInterface = Injected(DummyInterface),
+    ):
+        assert dummy is dummy2
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        r = await client.get("/")
+    assert r.status_code == status.HTTP_200_OK
+
+
 class DummyContextManager:
     UNENTERED = object()
     ENTERED = object()
