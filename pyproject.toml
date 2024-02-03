@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-injector"
-version = "0.5.3"
+version = "0.5.4"
 description = "python-injector integration for FastAPI"
 authors = ["Matyas Richter <matyas@mrichter.cz>"]
 license = "BSD"
