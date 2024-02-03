@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from injector import Injector, InstanceProvider, singleton
 
 from fastapi_injector.exceptions import InjectorNotAttached
-from fastapi_injector.request_scope import RequestScopeOptions
+from fastapi_injector.request_scope import RequestScopeFactory, RequestScopeOptions
 
 
 def attach_injector(
@@ -17,6 +17,7 @@ def attach_injector(
     injector.binder.bind(
         RequestScopeOptions, InstanceProvider(options), scope=singleton
     )
+    injector.binder.bind(RequestScopeFactory, to=RequestScopeFactory, scope=singleton)
 
 
 def get_injector_instance(app: FastAPI) -> Injector:
