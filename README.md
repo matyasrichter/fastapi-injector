@@ -33,66 +33,101 @@ def create_app(injector: Injector) -> FastAPI:
     return app
 ```
 
-Then, use `Injected` in your routes. Under the hood, `Injected` is `Depends`, so you can use it anywhere `Depends` can be used. In the following example, `InterfaceType` is
-something you've bound an implementation to in your injector instance.
+Then, use `Injected` in your routes. Under the hood, `Injected` is `Depends`, so you can use it anywhere `Depends` can be used.
+
+In the following example, an instance of something you've bound to `RandomNumberGenerator` is injected into the route - in this case, it's an implementation which uses the `random` module. Notice that only `app.py` (the 'composition root') has a dependency on the concrete generator implementation.
 
 ```python
+# ------------------------
+# generator.py
+import abc
+
+class RandomNumberGenerator(abc.ABC):
+    @abc.abstractmethod
+    def generate(self) -> int:
+        pass
+
+
+# ------------------------
+# generator_impl.py
+import random
+from .generator import RandomNumberGenerator
+
+class StdRandomNumberGenerator(RandomNumberGenerator):
+    def generate(self) -> int:
+       return random.randint(0,100)
+
+
+# ------------------------
+# app.py
+from fastapi import FastAPI
+from fastapi_injector import attach_injector
+from injector import Injector
+
+from .routers import generator_router
+from .generator import RandomNumberGenerator
+from .generator_impl import StdRandomNumberGenerator
+
+app = FastAPI()
+app.include_router(generator_router.router, prefix="/random")
+
+inj = Injector()
+inj.binder.bind(RandomNumberGenerator, to=StdRandomNumberGenerator)
+attach_injector(app, inj)
+
+
+# ------------------------
+# routers/generator_router.py
 from fastapi import APIRouter
 from fastapi_injector import Injected
 
+from ..generator import RandomNumberGenerator
+
 router = APIRouter()
 
-
 @router.get("/")
-async def get_root(integer: int = Injected(InterfaceType)):
-    return integer
+async def get_root(generator: RandomNumberGenerator = Injected(RandomNumberGenerator)) -> int:
+    return generator.generate()
 ```
 
-A more complete example could look like this (your FastAPI code only depends on `InterfaceType`,
-its implementation only depends on a domain layer port etc.):
+Here is another example. Imagine an onion-like architecture where your FastAPI code resides in the outer layer and your domain code ("use cases") are all defined in the inner layer. The usecases depend on interfaces that promise persistence, but the implementations (again, in the outer layer) are provided by dependency injection and the domain use case code knows nothing about them.
+Some parts (such as imports, app initialization or the definition of User) are ommited here.
 
 ```python
 # ------------------------
-# interface.py
-import abc
-from abc import abstractmethod
-
-
-class SomeInterface(abc.ABC):
-    @abstractmethod
-    async def create_some_entity(self) -> None:
-        """Creates and saves an entity."""
-
-
-# ------------------------
-# service.py
-import abc
-from .interface import SomeInterface
-
-
-class SomeSavePort(abc.ABC):
+# usecase.py
+class UserSavePort(abc.ABC):
     @abc.abstractmethod
-    async def save_something(self, something: Entity) -> None:
-        """Saves an entity."""
+    async def save_user(self, user: User) -> None:
+        """Saves an user."""
 
 
-class SomeService(SomeInterface):
-    def __init__(self, save_port: Inject[SomeSavePort]):
+class SignupUsecase:
+    def __init__(self, save_port: Inject[UserSavePort]):
         self.save_port = save_port
 
-    async def create_some_entity(self) -> None:
-        entity = Entity(attr1=1, attr2=2)
-        await self.save_port.save_something(entity)
+    async def create_user(self, username: str) -> None:
+        entity = User(username=username)
+        await self.save_port.save_user(entity)
 
 
 # ------------------------
 # repository.py
-from .service import SomeSavePort
+class UserRepository(UserSavePort):
+    async def save_user(self, user: Entity) -> None:
+        # code that saves the entity to the DB, like a call to an ORM or a SQL query
+        self.db.execute("INSERT INTO ...")
 
+# ------------------------
+# router.py
+@router.post("/")
+async def create_user(username: Annotated[str, Body()), uc: SignupUsecase = Injected(SignupUsecase)):
+    await uc.create_user(username)
 
-class SomeRepository(SomeSavePort):
-    async def save_something(self, something: Entity) -> None:
-# code that saves the entity to the DB
+# ------------------------
+# composition_root.py
+inj = Injector(auto_bind=True)
+inj.binder.bind(UserSavePort, to=UserRepository)
 ```
 
 ## Request scope
