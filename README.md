@@ -99,7 +99,7 @@ Some parts (such as imports, app initialization or the definition of User) are o
 class UserSavePort(abc.ABC):
     @abc.abstractmethod
     async def save_user(self, user: User) -> None:
-        """Saves an user."""
+        """Saves a user."""
 
 
 class SignupUsecase:
