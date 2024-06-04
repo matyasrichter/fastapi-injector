@@ -20,15 +20,21 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8 <3.13"
-fastapi = ">=0.70.0"
+fastapi = { version = ">=0.70.0", optional = true }
+fastapi-slim = { version = ">=0.111.0", optional = true }
 injector = ">=0.19.0"
 
 [tool.poetry.group.dev.dependencies]
+fastapi-slim = ">=0.111.0"
+httpx = ">=0.25.1,<0.28.0"
+pre-commit = "^3.5.0"
 pytest = ">=7.4.3,<9.0.0"
 pytest-asyncio = ">=0.21.1,<0.24.0"
 pytest-cov = ">=4.1,<6.0"
-pre-commit = "^3.5.0"
-httpx = ">=0.25.1,<0.28.0"
+
+[tool.poetry.extras]
+standard = ["fastapi"]
+slim = ["fastapi-slim"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
