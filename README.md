@@ -14,6 +14,16 @@ PyPI: https://pypi.org/project/fastapi-injector/
 pip install fastapi-injector
 ```
 
+`fastapi-injector` relies on your project using FastAPI as a dependency separately, but you can also get it installed automatically by using any of the extras.
+
+```shell
+# Installs `fastapi`
+pip install fastapi-injector[standard]
+
+# Installs `fastapi-slim`
+pip install fastapi-injector[slim]
+```
+
 ## Usage
 
 When creating your FastAPI app, attach the injector to it:
