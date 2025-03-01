@@ -1,4 +1,4 @@
-from typing import Any, Type, TypeVar
+from typing import Type, TypeVar
 
 from fastapi import Depends
 from starlette.requests import HTTPConnection
@@ -8,7 +8,7 @@ from fastapi_injector.attach import get_injector_instance
 T = TypeVar("T")
 
 
-def Injected(interface: Type[T]) -> T:
+def Injected(interface: Type[T]) -> T:  # pylint: disable=invalid-name
     """
     Asks your injector instance for the specified type,
     allowing you to use it in the route.
@@ -20,7 +20,7 @@ def Injected(interface: Type[T]) -> T:
     return Depends(inject_into_route)
 
 
-def SyncInjected(interface: Type[T]) -> T:
+def SyncInjected(interface: Type[T]) -> T:  # pylint: disable=invalid-name
     """
     Asks your injector instance for the specified type,
     allowing you to use it in the route. Intended for use
