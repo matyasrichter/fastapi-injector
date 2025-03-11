@@ -18,7 +18,6 @@ jobs:
         run: |
             pip install poetry
             poetry install
-            poetry self add poetry-version-plugin
 
       - name: Build
         run: poetry build
