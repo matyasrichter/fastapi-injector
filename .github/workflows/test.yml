@@ -19,7 +19,7 @@ jobs:
       - name: Lint with pre-commit
         uses: pre-commit/action@v3.0.0
       - name: Install requirements
-        run: pip install poetry && poetry install
+        run: pip install poetry==2.1.1 && poetry install
       - name: Test
         run: poetry run python -m pytest --cov fastapi_injector --cov-report xml
       - name: Collect test coverage
