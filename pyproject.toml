@@ -1,8 +1,10 @@
-[tool.poetry]
+[project]
 name = "fastapi-injector"
-version = "0"
+dynamic = ["version"]
 description = "python-injector integration for FastAPI"
-authors = ["Matyas Richter <matyas@mrichter.cz>"]
+authors = [
+    {name = "Matyas Richter", email = "matyas@mrichter.cz"}
+]
 license = "BSD"
 repository = "https://github.com/matyasrichter/fastapi-injector"
 packages = [
@@ -18,8 +20,16 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-[tool.poetry-version-plugin]
-source = "git-tag"
+[tool.poetry]
+version = "0"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+pattern = "default-unprefixed"
 
 [tool.poetry.dependencies]
 python = ">=3.8 <3.14"
@@ -40,5 +50,5 @@ standard = ["fastapi"]
 slim = ["fastapi-slim"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
