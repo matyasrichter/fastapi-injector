@@ -1,22 +1,32 @@
 import asyncio
 import threading
+import typing
 
 import httpx
 import pytest
-from fastapi import APIRouter, Depends, FastAPI, Response, status
+from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.testclient import TestClient
 from fastapi.websockets import WebSocket
 from injector import Injector, Module, provider
+from starlette.requests import HTTPConnection
 
 from fastapi_injector import (
+    InjectConnection,
     Injected,
+    InjectorMiddleware,
     InjectorNotAttached,
     SyncInjected,
     attach_injector,
     get_injector_instance,
+    request_scope,
 )
 
+ReqType = typing.NewType("ReqType", str)
+WsType = typing.NewType("WsType", str)
+
 BIND_INT_TO: int = 1
+BIND_STR_TO: str = "some_string"
+BIND_STR_TYPE_TO: str = "some_string_for_type"
 
 
 class MyModule(Module):
@@ -28,12 +38,28 @@ class MyModule(Module):
     def event_loop(self) -> asyncio.AbstractEventLoop:
         return asyncio.get_event_loop()
 
+    @provider
+    @request_scope
+    def conn_value(self, conn: HTTPConnection) -> str:
+        return conn.query_params["conn"]
+
+    @provider
+    @request_scope
+    def request_value(self, request: Request) -> ReqType:
+        return ReqType(request.query_params["req"])
+
+    @provider
+    @request_scope
+    def ws_value(self, websocket: WebSocket) -> WsType:
+        return WsType(websocket.query_params["ws"])
+
 
 @pytest.fixture
 def app() -> FastAPI:
     inj = Injector(MyModule())
     inj.binder.bind(int, to=BIND_INT_TO)
-    app = FastAPI()
+    app = FastAPI(dependencies=[InjectConnection()])
+    app.add_middleware(InjectorMiddleware, injector=inj)
     attach_injector(app, inj)
     return app
 
@@ -41,25 +67,57 @@ def app() -> FastAPI:
 @pytest.mark.asyncio
 async def test_route_injection(app):
     @app.get("/")
-    def get_root(integer: int = Injected(int)):
-        return integer
+    def get_root(
+        request: Request,
+        integer: int = Injected(int),
+        string: str = Injected(str),
+        req: ReqType = Injected(ReqType),
+    ):
+        return {
+            "int": integer,
+            "str": string,
+            "req": req,
+        }
 
     async with httpx.AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/")
+        response = await client.get(
+            "/?req={}&conn={}".format(BIND_STR_TYPE_TO, BIND_STR_TO),
+        )
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == BIND_INT_TO
+    assert response.json() == {
+        "int": BIND_INT_TO,
+        "str": BIND_STR_TO,
+        "req": BIND_STR_TYPE_TO,
+    }
 
 
 def test_route_injection_websocket(app):
     @app.websocket("/")
-    async def ws(websocket: WebSocket, integer: int = Injected(int)):
+    async def ws(
+        websocket: WebSocket,
+        integer: int = Injected(int),
+        string: str = Injected(str),
+        ws: WsType = Injected(WsType),
+    ):
         await websocket.accept()
-        await websocket.send_json(integer)
+        await websocket.send_json(
+            {
+                "int": integer,
+                "str": string,
+                "ws": ws,
+            }
+        )
         await websocket.close()
 
     client = TestClient(app)
-    with client.websocket_connect("/") as websocket:
-        assert websocket.receive_json() == BIND_INT_TO
+    with client.websocket_connect(
+        "/?ws={}&conn={}".format(BIND_STR_TYPE_TO, BIND_STR_TO),
+    ) as websocket:
+        assert websocket.receive_json() == {
+            "int": BIND_INT_TO,
+            "str": BIND_STR_TO,
+            "ws": BIND_STR_TYPE_TO,
+        }
 
 
 @pytest.mark.asyncio
