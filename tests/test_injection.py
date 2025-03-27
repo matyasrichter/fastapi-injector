@@ -8,13 +8,16 @@ from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.testclient import TestClient
 from fastapi.websockets import WebSocket
 from injector import Injector, Module, provider
+from pydantic import BaseModel
 from starlette.requests import HTTPConnection
 
 from fastapi_injector import (
+    InjectBody,
     InjectConnection,
     Injected,
     InjectorMiddleware,
     InjectorNotAttached,
+    SyncInjectBody,
     SyncInjected,
     attach_injector,
     get_injector_instance,
@@ -27,6 +30,11 @@ WsType = typing.NewType("WsType", str)
 BIND_INT_TO: int = 1
 BIND_STR_TO: str = "some_string"
 BIND_STR_TYPE_TO: str = "some_string_for_type"
+BIND_BYTES_TO: bytes = b"some_bytes"
+
+
+class MyModel(BaseModel):
+    value: bytes
 
 
 class MyModule(Module):
@@ -53,6 +61,12 @@ class MyModule(Module):
     def ws_value(self, websocket: WebSocket) -> WsType:
         return WsType(websocket.query_params["ws"])
 
+    @provider
+    @request_scope
+    def body_value(self, body: BaseModel) -> bytes:
+        assert isinstance(body, MyModel)
+        return body.value
+
 
 @pytest.fixture
 def app() -> FastAPI:
@@ -66,28 +80,86 @@ def app() -> FastAPI:
 
 @pytest.mark.asyncio
 async def test_route_injection(app):
-    @app.get("/")
-    def get_root(
+    @app.post("/", dependencies=[InjectBody(MyModel)])
+    def post_root(
         request: Request,
         integer: int = Injected(int),
         string: str = Injected(str),
+        bts: bytes = Injected(bytes),
         req: ReqType = Injected(ReqType),
     ):
         return {
             "int": integer,
             "str": string,
             "req": req,
+            "bytes": bts.decode(),
         }
 
     async with httpx.AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get(
+        response = await client.post(
             "/?req={}&conn={}".format(BIND_STR_TYPE_TO, BIND_STR_TO),
+            json={
+                "value": BIND_BYTES_TO.decode(),
+            },
         )
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
         "int": BIND_INT_TO,
         "str": BIND_STR_TO,
         "req": BIND_STR_TYPE_TO,
+        "bytes": BIND_BYTES_TO.decode(),
+    }
+
+
+@pytest.mark.asyncio
+async def test_route_body_injection(app):
+    @app.post("/")
+    def post_root(
+        body: MyModel = InjectBody(MyModel),
+        bts: bytes = Injected(bytes),
+    ):
+        assert isinstance(body, MyModel)
+        assert body.value == bts
+        return {
+            "bytes": body.value.decode(),
+        }
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/",
+            json={
+                "value": BIND_BYTES_TO.decode(),
+            },
+        )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "bytes": BIND_BYTES_TO.decode(),
+    }
+
+
+@pytest.mark.asyncio
+async def test_route_body_injection_sync(app):
+    @app.post("/")
+    def post_root(
+        body: MyModel = SyncInjectBody(MyModel),
+        bts: bytes = SyncInjected(bytes),
+    ):
+        assert isinstance(body, MyModel)
+        assert body.value == bts
+        return {
+            "bytes": body.value.decode(),
+        }
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/",
+            json={
+                "value": BIND_BYTES_TO.decode(),
+            },
+        )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "bytes": BIND_BYTES_TO.decode(),
     }
 
 
