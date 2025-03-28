@@ -71,7 +71,8 @@ def SyncInjectBody(interface: Type[M]) -> M:  # pylint: disable=invalid-name
                 kind=Parameter.POSITIONAL_OR_KEYWORD,
                 annotation=Annotated[interface, Body()],
             ),
-        ]
+        ],
+        return_annotation=interface,
     )
 
     return Depends(_sync_bind_body)
@@ -104,7 +105,8 @@ def InjectBody(interface: Type[M]) -> M:  # pylint: disable=invalid-name
                 kind=Parameter.POSITIONAL_OR_KEYWORD,
                 annotation=Annotated[interface, Body()],
             ),
-        ]
+        ],
+        return_annotation=interface,
     )
 
     return Depends(_bind_body)
