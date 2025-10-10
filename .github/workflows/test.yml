@@ -23,7 +23,7 @@ jobs:
       - name: Test
         run: poetry run python -m pytest --cov fastapi_injector --cov-report xml
       - name: Collect test coverage
-        uses: AndreMiras/coveralls-python-action@v20201129
+        uses: AndreMiras/coveralls-python-action@develop
         with:
           parallel: true
           flag-name: python-${{ matrix.python-version }}
