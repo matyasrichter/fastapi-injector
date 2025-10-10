@@ -32,7 +32,7 @@ vcs = "git"
 pattern = "default-unprefixed"
 
 [tool.poetry.dependencies]
-python = ">=3.9 <3.15"
+python = ">=3.10 <3.15"
 fastapi = { version = ">=0.70.0", optional = true }
 fastapi-slim = { version = ">=0.111.0", optional = true }
 injector = ">=0.19.0"
