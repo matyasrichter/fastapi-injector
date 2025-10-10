@@ -1,32 +1,32 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 'v4.5.0'
+    rev: 'v6.0.0'
     hooks:
       - id: end-of-file-fixer
   - repo: https://github.com/psf/black
-    rev: '23.11.0'
+    rev: '25.9.0'
     hooks:
       - id: black
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.7.0'
+    rev: 'v1.18.2'
     hooks:
       - id: mypy
         additional_dependencies:
           - fastapi
           - injector
   - repo: https://github.com/pycqa/flake8
-    rev: '6.1.0'
+    rev: '7.3.0'
     hooks:
       - id: flake8
         additional_dependencies:
           - fastapi
           - injector
   - repo: https://github.com/PyCQA/isort
-    rev: '5.12.0'
+    rev: '6.1.0'
     hooks:
       - id: isort
   - repo: https://github.com/pycqa/pylint
-    rev: 'v3.0.1'
+    rev: 'v3.3.9'
     hooks:
       - id: pylint
         files: fastapi_injector
