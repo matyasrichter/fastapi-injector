@@ -100,7 +100,7 @@ class RequestScope(InjectorScope):
 
     async def clear_key(self, key: uuid.UUID) -> None:
         """Clear the cache for a given request key."""
-        stack: AsyncExitStack = self.cache[key].get(AsyncExitStack, None)
+        stack: AsyncExitStack | None = self.cache[key].get(AsyncExitStack, None)
         if stack:
             await stack.aclose()
         del self.cache[key]
