@@ -79,6 +79,8 @@ class RequestScope(InjectorScope):
                 "Request ID missing in cache. "
                 "Make sure InjectorMiddleware has been added to the FastAPI instance."
             ) from exc
+        if request_id not in self.cache:
+            self.add_key(request_id)
         stack: Optional[AsyncExitStack] = None
         if self.options.enable_cleanup:
             if AsyncExitStack in self.cache[request_id]:
