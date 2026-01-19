@@ -350,3 +350,50 @@ async def test_async_context_manager_instances_are_not_cleaned_up_when_not_enabl
         assert dummy.state is DummyAsyncContextManager.UNENTERED
 
     assert dummy.state is DummyAsyncContextManager.UNENTERED
+
+
+@pytest.mark.asyncio
+async def test_multibind_with_request_scope(app_inj):
+    """Test that multibind works with request_scope without KeyError."""
+    from typing import List
+
+    class BaseEmbedder(abc.ABC):
+        @abc.abstractmethod
+        def embed(self, text: str) -> str:
+            pass
+
+    class AzureEmbedder(BaseEmbedder):
+        def embed(self, text: str) -> str:
+            return f"Azure: {text}"
+
+    class OllamaEmbedder(BaseEmbedder):
+        def embed(self, text: str) -> str:
+            return f"Ollama: {text}"
+
+    @inject
+    class EmbedderFactory:
+        def __init__(self, embedders: List[BaseEmbedder]):
+            self.embedders = embedders
+
+        def get_embeddings(self, text: str) -> List[str]:
+            return [e.embed(text) for e in self.embedders]
+
+    app, inj = app_inj
+    # Multibind with request_scope
+    inj.binder.multibind(List[BaseEmbedder], to=AzureEmbedder, scope=request_scope)
+    inj.binder.multibind(List[BaseEmbedder], to=OllamaEmbedder, scope=request_scope)
+    inj.binder.bind(EmbedderFactory, to=EmbedderFactory, scope=request_scope)
+
+    @app.get("/")
+    def get_root(embedder_factory: EmbedderFactory = Injected(EmbedderFactory)):
+        embeddings = embedder_factory.get_embeddings("test")
+        assert len(embeddings) == 2
+        assert "Azure: test" in embeddings
+        assert "Ollama: test" in embeddings
+        return {"embeddings": embeddings}
+
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        r = await client.get("/")
+    assert r.status_code == status.HTTP_200_OK
+    data = r.json()
+    assert len(data["embeddings"]) == 2
